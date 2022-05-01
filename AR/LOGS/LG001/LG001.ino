@@ -30,7 +30,12 @@ void loop(){
     }
     newton = Calc(peso); 
     Serial.println(newton); 
+    Serial.print("LOG: ");
+    Serial.println(itemp);
     GravTemp(newton);
+    Serial.println();
+    Serial.println();
+    Serial.println();
     delay(1000); 
   }else{
     finish(); 
@@ -43,8 +48,11 @@ float Calc(float Peso){
 }
 
 void GravTemp(float Newton){
+  Serial.println("Gravação");
   armz[i] =  Newton; 
   if(armz[i]< 0.05){ //Solução temp pois não esta encerrando corretamente, pois float tem 7 casas decimais, tentando filtrar para duas sem sucesso;  
+    Serial.print("Entrou, log =");
+    Serial.println(armz[i-1]); 
     itemp++; 
     if(itemp == 10){
       enc = true; 
