@@ -15,7 +15,7 @@ void setup(){
   itemp = 0;
   sck = 2; 
   dt = 3; 
-  calibra = 1600000.00;
+  calibra = 200000.00;
   balanca.begin(dt, sck);
   balanca.set_scale(calibra);
   balanca.tare();
@@ -44,10 +44,11 @@ float Calc(float Peso){
 
 void GravTemp(float Newton){
   armz[i] =  Newton; 
-  if(armz[i]< 0.05){ //Solução temp pois não esta encerrando corretamente, pois float tem 7 casas decimais, tentando filtrar para duas sem sucesso;  
+  if(Arredondar(armz[i]) == Arredondar(armz[i-1])){ //Solução temp pois não esta encerrando corretamzaente, pois float tem 7 casas decimais, tentando filtrar para duas sem sucesso;  
     itemp++; 
+    Serial.println(Arredondar(armz[i-1]));
     if(itemp == 10){
-      enc = true; 
+      enc = false; 
     }
   }else{
     itemp = 0; 
@@ -55,8 +56,17 @@ void GravTemp(float Newton){
   i++;
 }
 
+float Arredondar(float armz){
+    float myFloat = armz;
+    int myInt = round(myFloat);
+    return myInt;
+}
+
 void finish(){
   Serial.println("Terminou");
+  for (i = 0 ; i <= 100 ; i++){
+    Serial.println(armz[i]);
+  }
   delay(1000);
   exit(0);
 }
