@@ -1,37 +1,47 @@
-#include "HX711.h"
+#include <SPI.h>
+#include <SD.h>
+#include <HX711.h> 
 
+File myFile;
 HX711 balanca;
 
-int sck, dt;
-float calibra; 
+#define sck 2
+#define dt 3
+#define calibracao 185000
+#define tamArray 120
+
 float peso, newton;
-float armz[100];
+float armz[120];
 bool enc; 
-int i, itemp;
+int i, itemp, in;
 
 void setup(){
   Serial.begin(9600);
+  SD.begin(4);
   i = 0;
   itemp = 0;
-  sck = 2; 
-  dt = 3; 
-  calibra = 200000.00;
   balanca.begin(dt, sck);
-  balanca.set_scale(calibra);
+  balanca.set_scale(calibracao);
   balanca.tare();
   long zero_factor = balanca.read_average();
+
+  myFile = SD.open("valid.txt", FILE_WRITE);
+  if(myFile){
+    Serial.println("o modulo sd iniciou");
+    myFile.println("Dados:");
+  }else{
+    Serial.println("modulo nao iniciou");
+  }
+  myFile.close();
 }
 
 void loop(){
-  if(enc == false){
-    peso = balanca.get_units(), 10;
-    if(peso < abs(0)){
-      peso = 0; 
-    }
-    newton = Calc(peso); 
-    Serial.println(newton); 
+  if(!enc){
+    peso = balanca.get_units(4); 
+    newton = Calc(peso);
+    Serial.println(newton);
     GravTemp(newton);
-    delay(1000); 
+    delay(500); 
   }else{
     finish(); 
   }
@@ -44,11 +54,10 @@ float Calc(float Peso){
 
 void GravTemp(float Newton){
   armz[i] =  Newton; 
-  if(Arredondar(armz[i]) == Arredondar(armz[i-1])){ //Solução temp pois não esta encerrando corretamzaente, pois float tem 7 casas decimais, tentando filtrar para duas sem sucesso;  
+  if(dif() || (armz[i] <= 0.1)){
     itemp++; 
-    Serial.println(Arredondar(armz[i-1]));
-    if(itemp == 10){
-      enc = false; 
+    if(itemp == 20){
+      enc = true; 
     }
   }else{
     itemp = 0; 
@@ -56,17 +65,30 @@ void GravTemp(float Newton){
   i++;
 }
 
-float Arredondar(float armz){
-    float myFloat = armz;
-    int myInt = round(myFloat);
-    return myInt;
+bool dif(){  
+  if(((armz[(i-1)]* 1.1) > armz[i]) && ((armz[(i-1)] * 0.9) < armz[i])){
+    return true;
+  }else{
+    return false; 
+  }
 }
 
 void finish(){
+  myFile = SD.open("valid.txt", FILE_WRITE);
   Serial.println("Terminou");
-  for (i = 0 ; i <= 100 ; i++){
-    Serial.println(armz[i]);
+  if (myFile){
+    Serial.println("GRAVANDO");
+    for (i = 0 ; i < 120; i++){
+      myFile.print(armz[i]);
+      myFile.print(";");
+      myFile.print((float)i/2);
+      myFile.println(";"); 
+    }
+    Serial.println("Gravou");
+  } else{
+    Serial.println("O cartao nao iniciou");
   }
+  myFile.close();
   delay(1000);
   exit(0);
 }
